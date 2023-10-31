@@ -28,7 +28,7 @@ public class PlayerMovement : MonoBehaviour
     Transform transformOnGround;
 
     public Vector2 newGravityDirection = new Vector2(0f, -1f);
-    public float gravityStrength = 4f;
+    public float gravityStrength = 0.25f;
 
     // Start is called before the first frame update
     void Start()
@@ -53,7 +53,7 @@ public class PlayerMovement : MonoBehaviour
             newGravityDirection = closestPoint-pos;
         }
 
-        Vector2 gravityForce = newGravityDirection * Physics2D.gravity.magnitude;
+        Vector2 gravityForce = newGravityDirection * Physics2D.gravity.magnitude * gravityStrength;
         playerRb.AddForce(gravityForce);
 
         xInput = Input.GetAxisRaw("Horizontal");
