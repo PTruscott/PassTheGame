@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Assertions.Must;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -26,18 +25,22 @@ public class PlayerMovement : MonoBehaviour
     public float KBCounter;
     public float KBTotalTime;
 
-    Transform transformOnGround;
-
     public float gravityStrength = 0.25f;
+
+    public GameObject stringPrefab;
+    public float hingeBreakForce = 1000.0f;
+
+    private GameObject prevString;
 
     // Start is called before the first frame update
     void Start()
     {
-        // transformOnGround is needed to make control as expected in the air
-        transformOnGround = CreateDeepCopy(transform);
+        // var p1 = CreateStringPiece(new Vector3(5, 0, 0), toPos: new Vector3(6, 0, 0));
+        // var p2 = CreateStringPiece(new Vector3(4, 0, 0), p1);
+        // var p3 = CreateStringPiece(new Vector3(3, 0, 0), p2);
     }
 
-    Vector2 GetGravityAt(Vector2 position)
+    Vector2 GetGravityAt(Vector2 position, float mass)
     {
         var planets = GameObject.FindGameObjectsWithTag(planetTag);
         var gravity = new Vector2();
@@ -46,12 +49,15 @@ public class PlayerMovement : MonoBehaviour
             // Assume circle
             // A=pi∗a/2∗b/2
             var area = Math.PI * planet.transform.localScale.x / 2 * planet.transform.localScale.y / 2;
+            var planetMass = area;
             var toPlanet = new Vector2(planet.transform.position.x, planet.transform.position.y) - position;
             // F = (G * M * m) / (r^2)
             var r = toPlanet.magnitude;
-            gravity += toPlanet * (float)((Physics2D.gravity.magnitude * gravityStrength * area) / (r * r));
-            Debug.DrawLine(position, position + gravity * 0.01f, Color.green);
+            var planetGravity = toPlanet * (float)((Physics2D.gravity.magnitude * gravityStrength * mass * planetMass) / (r * r));
+            gravity += planetGravity;
+            Debug.DrawLine(position, position + planetGravity * 0.05f, Color.green);
         }
+        Debug.DrawLine(position, position + gravity * 0.05f, Color.red);
         return gravity;
     }
 
@@ -129,17 +135,61 @@ public class PlayerMovement : MonoBehaviour
         // }
     }
 
+    GameObject CreateStringPiece(Vector3 fromPos, GameObject prevStringPiece = null, Vector3? toPos = null)
+    {
+        var newString = Instantiate(stringPrefab);
+
+        var anchorOffset = 0.05f;
+
+        var toPosValue = toPos ?? prevStringPiece.transform.TransformPoint(new Vector3(-0.5f + anchorOffset * 2, 0, 0));
+        var diff = toPosValue - fromPos;
+        newString.transform.position = (fromPos + toPosValue) / 2;
+        newString.transform.localScale = new Vector3(diff.magnitude, newString.transform.localScale.y, newString.transform.localScale.z);
+        var rotation = Mathf.Rad2Deg * (float)Math.Atan2(diff.y, diff.x);
+        newString.transform.rotation = Quaternion.AngleAxis(rotation, Vector3.forward);
+        // Debug.Log($"fromPos: {fromPos}; toPos: {toPosValue}; rotation: {rotation}");
+
+        if (prevStringPiece != null)
+        {
+            var hinge = prevStringPiece.AddComponent<HingeJoint2D>();
+            hinge.anchor = new Vector2(-0.5f + anchorOffset, 0);
+            hinge.connectedBody = newString.GetComponent<Rigidbody2D>();
+            hinge.connectedAnchor = new Vector2(0.5f - anchorOffset, 0);
+            hinge.breakForce = hingeBreakForce;
+            // Debug.Log($"anchor: {hinge.anchor}; connectedAnchor: {hinge.connectedAnchor}");
+        }
+        return newString;
+    }
+
     // 50 ticks a second
     void FixedUpdate()
     {
-        var gravity = GetGravityAt(transform.position);
+        var gravity = GetGravityAt(transform.position, playerRb.mass);
         playerRb.AddForce(gravity);
 
         var down = gravity.normalized;
         var right = new Vector2(-down.y, down.x);
         var xInput = Input.GetAxisRaw("Horizontal");
-        playerRb.velocity += right * xInput;
+        playerRb.AddForce(right * xInput * Time.fixedDeltaTime * 300.0f);
         Debug.DrawLine(transform.position, transform.position + new Vector3(right.x, right.y, 0), Color.blue);
+
+        var yInput = Input.GetAxisRaw("Vertical");
+        playerRb.AddForce(-down * yInput * Time.fixedDeltaTime * 500.0f);
+
+        var towardsMouseVec3 = Camera.main.ScreenToWorldPoint(Input.mousePosition) - transform.position;
+        var towardsMouse = new Vector3(towardsMouseVec3.x, towardsMouseVec3.y);
+        Debug.DrawLine(transform.position, transform.position + new Vector3(towardsMouse.x, towardsMouse.y, 0), Color.magenta);
+        // Physics2D.IgnoreLayerCollision(7, 7);
+        if (Input.GetMouseButton(0))
+        {
+            prevString = CreateStringPiece(transform.position, prevString, prevString != null ? null : transform.position + towardsMouse * Time.deltaTime);
+            prevString.GetComponent<Rigidbody2D>().velocity = towardsMouse * 2.0f;
+            Physics2D.IgnoreCollision(GetComponent<Collider2D>(), prevString.GetComponent<Collider2D>());
+        }
+        else
+        {
+            prevString = null;
+        }
 
         // if (KBCounter > 0)
         // {
