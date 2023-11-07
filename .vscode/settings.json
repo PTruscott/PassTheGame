@@ -2,7 +2,7 @@
     "files.exclude": {
         "**/.DS_Store": true,
         "**/.git": true,
-        "**/*.meta": true,
+        "**/*.meta": true
     },
-    "dotnet.defaultSolution": "My project.sln"
+    "dotnet.defaultSolution": "PassTheGame.sln"
 }
