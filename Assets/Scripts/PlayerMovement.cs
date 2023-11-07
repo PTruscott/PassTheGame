@@ -1,6 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public class PlayerMovement : MonoBehaviour
 
     public float xInput;
 
+    public string planetTag = "Planet";
     public LayerMask groundLayer;
     public Transform feetPosition;
     public float groundCheck;
@@ -27,7 +28,6 @@ public class PlayerMovement : MonoBehaviour
 
     Transform transformOnGround;
 
-    public Vector2 newGravityDirection = new Vector2(0f, -1f);
     public float gravityStrength = 0.25f;
 
     // Start is called before the first frame update
@@ -37,90 +37,128 @@ public class PlayerMovement : MonoBehaviour
         transformOnGround = CreateDeepCopy(transform);
     }
 
+    Vector2 GetGravityAt(Vector2 position)
+    {
+        var planets = GameObject.FindGameObjectsWithTag(planetTag);
+        var gravity = new Vector2();
+        foreach (var planet in planets)
+        {
+            // Assume circle
+            // A=pi∗a/2∗b/2
+            var area = Math.PI * planet.transform.localScale.x / 2 * planet.transform.localScale.y / 2;
+            var toPlanet = new Vector2(planet.transform.position.x, planet.transform.position.y) - position;
+            // F = (G * M * m) / (r^2)
+            var r = toPlanet.magnitude;
+            gravity += toPlanet * (float)((Physics2D.gravity.magnitude * gravityStrength * area) / (r * r));
+            Debug.DrawLine(position, position + gravity * 0.01f, Color.green);
+        }
+        return gravity;
+    }
+
     // Update is called once per frame
-    void Update() {
+    void Update()
+    {
         // counteract the gravity before applying our own
         // playerRb.AddForce(-Physics2D.gravity, ForceMode2D.Force);
 
-        Vector2 closestPoint = FindClosestPoint(transform.position, groundLayer);
-        SmoothRotateTowardsPoint(closestPoint);
+        // Vector2 closestPoint = FindClosestPoint(transform.position, groundLayer);
+        // SmoothRotateTowardsPoint(closestPoint);
 
-        Debug.DrawLine(transform.position, closestPoint, Color.red); // Draw a line from currentPosition to the closest point
+        // Debug.DrawLine(transform.position, closestPoint, Color.red); // Draw a line from currentPosition to the closest point
 
-        if (playerRb.IsTouchingLayers(groundLayer)) { 
-            transformOnGround = CreateDeepCopy(transform, transformOnGround);
-            Vector2 pos = transform.position;
-            newGravityDirection = closestPoint-pos;
-        }
+        // if (playerRb.IsTouchingLayers(groundLayer)) {
+        //     transformOnGround = CreateDeepCopy(transform, transformOnGround);
+        //     Vector2 pos = transform.position;
+        //     newGravityDirection = closestPoint-pos;
+        // }
 
-        Vector2 gravityForce = newGravityDirection * Physics2D.gravity.magnitude * gravityStrength;
-        playerRb.AddForce(gravityForce);
+        // xInput = Input.GetAxisRaw("Horizontal");
+        // Vector2 inputVel = transformOnGround.right * speed;
 
-        xInput = Input.GetAxisRaw("Horizontal");
-        Vector2 inputVel = transformOnGround.right * speed;
+        // if (xInput != 0)
+        // {
+        //     inputVel = inputVel * xInput;
+        //     playerRb.velocity = CalculatePerpendicularComponent(playerRb.velocity, inputVel) + inputVel;
+        // }
+        // else
+        // {
+        //     playerRb.velocity = CalculatePerpendicularComponent(playerRb.velocity, inputVel);
+        // }
 
-        if (xInput != 0) {
-            inputVel = inputVel * xInput;
-            playerRb.velocity = CalculatePerpendicularComponent(playerRb.velocity, inputVel) + inputVel; 
-        }
-        else {
-            playerRb.velocity = CalculatePerpendicularComponent(playerRb.velocity, inputVel); 
-        }
+        // if (playerRb.IsTouchingLayers(groundLayer))
+        // {
+        //     if (!Input.GetButton("Jump") && !Input.GetKey(KeyCode.S))
+        //     {
+        //         // if on ground we reset
+        //         doubleJumpState = 0;
+        //     }
 
-        if (playerRb.IsTouchingLayers(groundLayer)) { 
-            if (!Input.GetButton("Jump") && !Input.GetKey(KeyCode.S)) {
-                // if on ground we reset
-                doubleJumpState = 0;
-            }
+        //     if (Input.GetButtonDown("Jump"))
+        //     {
+        //         playerRb.velocity = transformOnGround.up * jumpForce;
+        //     }
 
-            if (Input.GetButtonDown("Jump")) {
-                playerRb.velocity = transformOnGround.up * jumpForce;
-            }
-
-            if (Input.GetKeyDown(KeyCode.S)) {
-                playerRb.velocity = transformOnGround.up * -jumpForce;
-            }
-
-            
-        }
+        //     if (Input.GetKeyDown(KeyCode.S))
+        //     {
+        //         playerRb.velocity = transformOnGround.up * -jumpForce;
+        //     }
 
 
-        if (Input.GetButtonDown("Jump") && doubleJumpState == 1) {
-            playerRb.velocity = transformOnGround.up * jumpForce;
-            doubleJumpState = 2;
-        }
+        // }
 
-        if (Input.GetKeyDown(KeyCode.S) && doubleJumpState == 1) {
-            playerRb.velocity = transformOnGround.up * -jumpForce;
-            doubleJumpState = 2;
-        }
 
-        if (Input.GetButtonUp("Jump") || Input.GetKeyUp(KeyCode.S)) {
-            // only allow double jump post key being released
-            if (doubleJumpState == 0) {
-                doubleJumpState = 1;
-            }  
-        } 
+        // if (Input.GetButtonDown("Jump") && doubleJumpState == 1)
+        // {
+        //     playerRb.velocity = transformOnGround.up * jumpForce;
+        //     doubleJumpState = 2;
+        // }
+
+        // if (Input.GetKeyDown(KeyCode.S) && doubleJumpState == 1)
+        // {
+        //     playerRb.velocity = transformOnGround.up * -jumpForce;
+        //     doubleJumpState = 2;
+        // }
+
+        // if (Input.GetButtonUp("Jump") || Input.GetKeyUp(KeyCode.S))
+        // {
+        //     // only allow double jump post key being released
+        //     if (doubleJumpState == 0)
+        //     {
+        //         doubleJumpState = 1;
+        //     }
+        // }
     }
 
     // 50 ticks a second
-    void FixedUpdate() {
+    void FixedUpdate()
+    {
+        var gravity = GetGravityAt(transform.position);
+        playerRb.AddForce(gravity);
 
-        if (KBCounter > 0) {
-            playerRb.velocity = transformOnGround.up * KBForce;
+        var down = gravity.normalized;
+        var right = new Vector2(-down.y, down.x);
+        var xInput = Input.GetAxisRaw("Horizontal");
+        playerRb.velocity += right * xInput;
+        Debug.DrawLine(transform.position, transform.position + new Vector3(right.x, right.y, 0), Color.blue);
 
-            KBCounter -= Time.deltaTime;
-        }
+        // if (KBCounter > 0)
+        // {
+        //     playerRb.velocity = transformOnGround.up * KBForce;
 
-        if (Input.GetKey(KeyCode.Q)){
-            Quaternion localRotation = Quaternion.Euler(0f, 0f, rotationSpeed);
-            transform.rotation = transform.rotation * localRotation;
-        }
+        //     KBCounter -= Time.deltaTime;
+        // }
 
-        if (Input.GetKey(KeyCode.E)){
-            Quaternion localRotation = Quaternion.Euler(0f, 0f, -rotationSpeed);
-            transform.rotation = transform.rotation * localRotation;
-        }
+        // if (Input.GetKey(KeyCode.Q))
+        // {
+        //     Quaternion localRotation = Quaternion.Euler(0f, 0f, rotationSpeed);
+        //     transform.rotation = transform.rotation * localRotation;
+        // }
+
+        // if (Input.GetKey(KeyCode.E))
+        // {
+        //     Quaternion localRotation = Quaternion.Euler(0f, 0f, -rotationSpeed);
+        //     transform.rotation = transform.rotation * localRotation;
+        // }
     }
 
     private Vector2 CalculatePerpendicularComponent(Vector2 v1, Vector2 v2)
@@ -139,7 +177,8 @@ public class PlayerMovement : MonoBehaviour
 
     private Transform CreateDeepCopy(Transform source, Transform targetT = null)
     {
-        if (targetT == null) {
+        if (targetT == null)
+        {
             GameObject newGameObject = new GameObject("DeepCopyTransform"); // Create an empty GameObject
             targetT = newGameObject.transform;
         }
@@ -184,6 +223,6 @@ public class PlayerMovement : MonoBehaviour
         // Debug.Log(targetRotation);
         // Debug.Log(transform.rotation);
 
-        transform.rotation = Quaternion.Euler(0f, 0f, targetAngle+90);
+        transform.rotation = Quaternion.Euler(0f, 0f, targetAngle + 90);
     }
 }
