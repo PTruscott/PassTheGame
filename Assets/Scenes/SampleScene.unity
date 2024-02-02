@@ -714,8 +714,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   offset: {x: 0, y: 0, z: -10}
-  smoothSpeed: 2
-  rotationSpeed: 1
+  smoothSpeed: 4
+  rotationSpeed: 2
 --- !u!1 &650381991
 GameObject:
   m_ObjectHideFlags: 0

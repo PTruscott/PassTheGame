@@ -11,17 +11,18 @@ public class CameraFollow : MonoBehaviour
     // would really like to up the smoothSpeed, but seems to cause weird jittering interactions with the rotation speed on anything over 1 which gets worse
     public float smoothSpeed;
     public float rotationSpeed;
+    Quaternion desiredRotation;
 
 
-    void LateUpdate() {
+    void FixedUpdate() {
         Vector3 desiredPosition = playerTransform.position+offset;
         Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
         transform.position = smoothedPosition;
 
         if (playerRb.IsTouchingLayers(groundLayer)) { 
-            Quaternion desiredRotation = playerTransform.rotation;
-            Quaternion smoothedRotation = Quaternion.Lerp(transform.rotation, desiredRotation, rotationSpeed * Time.deltaTime);
-            transform.rotation = smoothedRotation;
+            desiredRotation = playerTransform.rotation;
         }
+        Quaternion smoothedRotation = Quaternion.Lerp(transform.rotation, desiredRotation, rotationSpeed * Time.deltaTime);
+        transform.rotation = smoothedRotation;
     }
 }

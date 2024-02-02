@@ -30,6 +30,8 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 newGravityDirection = new Vector2(0f, -1f);
     public float gravityStrength = 0.25f;
 
+    public bool preserveDirection = true;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -39,8 +41,6 @@ public class PlayerMovement : MonoBehaviour
 
     // Update is called once per frame
     void Update() {
-        // counteract the gravity before applying our own
-        // playerRb.AddForce(-Physics2D.gravity, ForceMode2D.Force);
 
         Vector2 closestPoint = FindClosestPoint(transform.position, groundLayer);
         SmoothRotateTowardsPoint(closestPoint);
@@ -79,9 +79,7 @@ public class PlayerMovement : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.S)) {
                 playerRb.velocity = transformOnGround.up * -jumpForce;
-            }
-
-            
+            }            
         }
 
 
@@ -106,20 +104,11 @@ public class PlayerMovement : MonoBehaviour
     // 50 ticks a second
     void FixedUpdate() {
 
+        // knockback jumps
         if (KBCounter > 0) {
             playerRb.velocity = transformOnGround.up * KBForce;
 
             KBCounter -= Time.deltaTime;
-        }
-
-        if (Input.GetKey(KeyCode.Q)){
-            Quaternion localRotation = Quaternion.Euler(0f, 0f, rotationSpeed);
-            transform.rotation = transform.rotation * localRotation;
-        }
-
-        if (Input.GetKey(KeyCode.E)){
-            Quaternion localRotation = Quaternion.Euler(0f, 0f, -rotationSpeed);
-            transform.rotation = transform.rotation * localRotation;
         }
     }
 
